@@ -126,3 +126,22 @@ int module_unload(YR_OBJECT* module_object) {
   curl_url_cleanup(module_object->data);
   return ERROR_SUCCESS;
 }
+
+
+/*
+
+configure.ac needs:
+
+AC_ARG_ENABLE([url],
+  [AS_HELP_STRING([--enable-url], [enable url module])],
+  [if test x$enableval = xyes; then
+    build_url_module=true
+    AC_CHECK_HEADERS([curl/urlapi.h],,
+      AC_MSG_ERROR([url module requires libcurl >= 7.62.0]))
+    AC_CHECK_LIB(curl, curl_url,,
+      AC_MSG_ERROR([url module requires libcurl >= 7.62.0]))
+    CFLAGS="$CFLAGS -DURL_MODULE"
+    PC_REQUIRES_PRIVATE="$PC_REQUIRES_PRIVATE curl"
+  fi])
+
+*/
