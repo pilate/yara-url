@@ -76,6 +76,7 @@ define_function(zoneid) {
 
 
 begin_declarations;
+
   declare_string("scheme");
   declare_string("user");
   declare_string("password");
@@ -99,7 +100,6 @@ begin_declarations;
     declare_function("fragment", "r", "i", fragment);
     declare_function("zoneid", "r", "i", zoneid);
   end_struct("match");
-
 
 end_declarations;
 
