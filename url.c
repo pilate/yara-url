@@ -92,12 +92,12 @@ end_declarations;
 
 
 int module_initialize(YR_MODULE* module) {
-    return ERROR_SUCCESS;
+  return ERROR_SUCCESS;
 }
 
 
 int module_finalize(YR_MODULE* module) {
-    return ERROR_SUCCESS;
+  return ERROR_SUCCESS;
 }
 
 
@@ -123,6 +123,6 @@ int module_load(YR_SCAN_CONTEXT* context, YR_OBJECT* module_object, void* module
 
 
 int module_unload(YR_OBJECT* module_object) {
-    curl_url_cleanup(module_object->data);
-    return ERROR_SUCCESS;
+  curl_url_cleanup(module_object->data);
+  return ERROR_SUCCESS;
 }
