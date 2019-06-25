@@ -4,7 +4,7 @@ Module for yara that allows matching on URL components
 
 ### Example:
 
-```c
+```yara
 import "url"
 
 rule test
