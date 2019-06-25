@@ -12,7 +12,7 @@ rule test
   meta:
     description = "Using the URL module to match a hostname containing 'google'"
   condition:
-    url.host(/google/)
+    (url.scheme == "ftp") and url.match.host(/^google/)
 }
 ```
 
