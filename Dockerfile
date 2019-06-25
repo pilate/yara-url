@@ -28,11 +28,9 @@ RUN cd yara-3.10.0 \
 RUN cd yara-3.10.0 \
 && ./bootstrap.sh \
 && ./configure \
-&& cd ..
-
-RUN cd yara-3.10.0 \
 && make \
-&& make install
+&& make install \
+&& cd ..
 
 RUN echo "/usr/local/lib" >> /etc/ld.so.conf \
 && ldconfig
