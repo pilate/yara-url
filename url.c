@@ -99,7 +99,7 @@ begin_declarations;
   declare_string("password");
   declare_string("options");
   declare_string("host");
-  declare_string("port");
+  declare_integer("port");
   declare_string("path");
   declare_string("query");
   declare_string("fragment");
@@ -165,7 +165,7 @@ int module_load(YR_SCAN_CONTEXT *context, YR_OBJECT *module_object, void *module
 
   uc = curl_url_get(url, CURLUPART_PORT, &url_parts_ptr->port, FLAGS);
   if (!uc)
-    set_string(url_parts_ptr->port, module_object, "port");
+    set_integer(atoi(url_parts_ptr->port), module_object, "port");
 
   uc = curl_url_get(url, CURLUPART_PATH, &url_parts_ptr->path, FLAGS);
   if (!uc)
