@@ -1,5 +1,4 @@
 #include <curl/urlapi.h>
-#include <stdio.h>
 #include <yara/mem.h>
 #include <yara/modules.h>
 
