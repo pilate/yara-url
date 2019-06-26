@@ -6,6 +6,8 @@
 
 
 unsigned int FLAGS = CURLU_URLDECODE | CURLU_DEFAULT_SCHEME | CURLU_DEFAULT_PORT;
+char EMPTY[1] = "\x00";
+char *EMPTY_PTR = EMPTY;
 
 typedef struct {
   char *scheme;
@@ -154,10 +156,14 @@ int module_load(YR_SCAN_CONTEXT *context, YR_OBJECT *module_object, void *module
   uc = curl_url_get(url, CURLUPART_USER, &url_parts_ptr->user, FLAGS);
   if (!uc)
     set_string(url_parts_ptr->user, module_object, "user");
+  else
+    set_string(EMPTY_PTR, module_object, "user");
 
   uc = curl_url_get(url, CURLUPART_PASSWORD, &url_parts_ptr->password, FLAGS);
   if (!uc)
     set_string(url_parts_ptr->password, module_object, "password");
+  else
+    set_string(EMPTY_PTR, module_object, "password");
 
   uc = curl_url_get(url, CURLUPART_HOST, &url_parts_ptr->host, FLAGS);
   if (!uc)
@@ -174,14 +180,20 @@ int module_load(YR_SCAN_CONTEXT *context, YR_OBJECT *module_object, void *module
   uc = curl_url_get(url, CURLUPART_QUERY, &url_parts_ptr->query, FLAGS);
   if (!uc)
     set_string(url_parts_ptr->query, module_object, "query");
+  else
+    set_string(EMPTY_PTR, module_object, "query");
 
   uc = curl_url_get(url, CURLUPART_FRAGMENT, &url_parts_ptr->fragment, FLAGS);
   if (!uc)
     set_string(url_parts_ptr->fragment, module_object, "fragment");
+  else
+    set_string(EMPTY_PTR, module_object, "fragment");
 
   uc = curl_url_get(url, CURLUPART_ZONEID, &url_parts_ptr->zoneid, FLAGS);
   if (!uc)
     set_string(url_parts_ptr->zoneid, module_object, "zoneid");
+  else
+    set_string(EMPTY_PTR, module_object, "zoneid");
 
   curl_url_cleanup(url);
   module_object->data = url_parts_ptr;
