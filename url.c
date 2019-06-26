@@ -1,5 +1,6 @@
 #include <curl/urlapi.h>
 #include <stdio.h>
+#include <yara/mem.h>
 #include <yara/modules.h>
 
 #define MODULE_NAME url
@@ -8,69 +9,87 @@
 
 unsigned int FLAGS = CURLU_URLDECODE | CURLU_DEFAULT_SCHEME | CURLU_DEFAULT_PORT;
 
+typedef struct {
+  char* scheme;
+  char* user;
+  char* password;
+  char* options;
+  char* host;
+  char* port;
+  char* path;
+  char* query;
+  char* fragment;
+  char* zoneid;
+} URLParts;
 
-int yr_re_match_curlupart(CURLU *url, CURLUPart curl_part, YR_SCAN_CONTEXT* context, RE* regexp) {
+int yr_re_match_curlupart(char* url_part, YR_SCAN_CONTEXT* context, RE* regexp) {
   int result = 0;
-  char *url_part;
-  curl_url_get(url, curl_part, &url_part, FLAGS);
 
   if (yr_re_match(context, regexp, url_part) > 0)
   {
     result = 1;
   }
 
-  curl_free(url_part);
   return result;
 }
 
-
 define_function(scheme) {
-  int result = yr_re_match_curlupart(module()->data, CURLUPART_SCHEME, scan_context(), regexp_argument(1));
+  URLParts* url_parts_ptr = module()->data;
+  int result = yr_re_match_curlupart(url_parts_ptr->scheme, scan_context(), regexp_argument(1));
   return_integer(result);
 }
 
 define_function(user) {
-  int result = yr_re_match_curlupart(module()->data, CURLUPART_USER, scan_context(), regexp_argument(1));
+  URLParts* url_parts_ptr = module()->data;
+  int result = yr_re_match_curlupart(url_parts_ptr->user, scan_context(), regexp_argument(1));
   return_integer(result);
 }
 
 define_function(password) {
-  int result = yr_re_match_curlupart(module()->data, CURLUPART_PASSWORD, scan_context(), regexp_argument(1));
+  URLParts* url_parts_ptr = module()->data;
+  int result = yr_re_match_curlupart(url_parts_ptr->password, scan_context(), regexp_argument(1));
   return_integer(result);
 }
 
 define_function(options) {
-  int result = yr_re_match_curlupart(module()->data, CURLUPART_OPTIONS, scan_context(), regexp_argument(1));
+  URLParts* url_parts_ptr = module()->data;
+  int result = yr_re_match_curlupart(url_parts_ptr->options, scan_context(), regexp_argument(1));
   return_integer(result);
 }
 
 define_function(host) {
-  int result = yr_re_match_curlupart(module()->data, CURLUPART_HOST, scan_context(), regexp_argument(1));
+  URLParts* url_parts_ptr = module()->data;
+  int result = yr_re_match_curlupart(url_parts_ptr->host, scan_context(), regexp_argument(1));
   return_integer(result);
 }
 
 define_function(port) {
-  int result = yr_re_match_curlupart(module()->data, CURLUPART_PORT, scan_context(), regexp_argument(1));
+  URLParts* url_parts_ptr = module()->data;
+  int result = yr_re_match_curlupart(url_parts_ptr->port, scan_context(), regexp_argument(1));
   return_integer(result);
 }
 
 define_function(path) {
-  int result = yr_re_match_curlupart(module()->data, CURLUPART_PATH, scan_context(), regexp_argument(1));
+  URLParts* url_parts_ptr = module()->data;
+  int result = yr_re_match_curlupart(url_parts_ptr->path, scan_context(), regexp_argument(1));
   return_integer(result);
 }
 
 define_function(query) {
-  int result = yr_re_match_curlupart(module()->data, CURLUPART_QUERY, scan_context(), regexp_argument(1));
+  URLParts* url_parts_ptr = module()->data;
+  int result = yr_re_match_curlupart(url_parts_ptr->query, scan_context(), regexp_argument(1));
   return_integer(result);
 }
 
 define_function(fragment) {
-  int result = yr_re_match_curlupart(module()->data, CURLUPART_FRAGMENT, scan_context(), regexp_argument(1));
+  URLParts* url_parts_ptr = module()->data;
+  int result = yr_re_match_curlupart(url_parts_ptr->fragment, scan_context(), regexp_argument(1));
   return_integer(result);
 }
 
 define_function(zoneid) {
-  int result = yr_re_match_curlupart(module()->data, CURLUPART_ZONEID, scan_context(), regexp_argument(1));
+  URLParts* url_parts_ptr = module()->data;
+  int result = yr_re_match_curlupart(url_parts_ptr->zoneid, scan_context(), regexp_argument(1));
   return_integer(result);
 }
 
@@ -89,6 +108,7 @@ begin_declarations;
   declare_string("zoneid");
 
   begin_struct("match");
+
     declare_function("scheme", "r", "i", scheme);
     declare_function("user", "r", "i", user);
     declare_function("password", "r", "i", password);
@@ -99,6 +119,7 @@ begin_declarations;
     declare_function("query", "r", "i", query);
     declare_function("fragment", "r", "i", fragment);
     declare_function("zoneid", "r", "i", zoneid);
+
   end_struct("match");
 
 end_declarations;
@@ -108,15 +129,14 @@ int module_initialize(YR_MODULE* module) {
   return ERROR_SUCCESS;
 }
 
-
 int module_finalize(YR_MODULE* module) {
   return ERROR_SUCCESS;
 }
 
-
 int module_load(YR_SCAN_CONTEXT* context, YR_OBJECT* module_object, void* module_data, size_t module_data_size) {
   CURLUcode uc;
-  CURLU *url;
+  CURLU* url;
+  URLParts* url_parts_ptr = yr_malloc(sizeof(URLParts));
 
   url = curl_url();
   if (!url)
@@ -129,58 +149,61 @@ int module_load(YR_SCAN_CONTEXT* context, YR_OBJECT* module_object, void* module
   if (uc)
     return -1;
 
-  char *url_part;
+  uc = curl_url_get(url, CURLUPART_SCHEME, &url_parts_ptr->scheme, FLAGS);
+  if (!uc)
+    set_string(url_parts_ptr->scheme, module_object, "scheme");
 
-  curl_url_get(url, CURLUPART_SCHEME, &url_part, FLAGS);
-  if (url_part)
-    set_string(url_part, module_object, "scheme");
+  uc = curl_url_get(url, CURLUPART_USER, &url_parts_ptr->user, FLAGS);
+  if (!uc)
+    set_string(url_parts_ptr->user, module_object, "user");
 
-  curl_url_get(url, CURLUPART_USER, &url_part, FLAGS);
-  if (url_part)
-    set_string(url_part, module_object, "user");
+  uc = curl_url_get(url, CURLUPART_PASSWORD, &url_parts_ptr->password, FLAGS);
+  if (!uc)
+    set_string(url_parts_ptr->password, module_object, "password");
 
-  curl_url_get(url, CURLUPART_PASSWORD, &url_part, FLAGS);
-  if (url_part)
-    set_string(url_part, module_object, "password");
+  uc = curl_url_get(url, CURLUPART_HOST, &url_parts_ptr->host, FLAGS);
+  if (!uc)
+    set_string(url_parts_ptr->host, module_object, "host");
 
-  curl_url_get(url, CURLUPART_OPTIONS, &url_part, FLAGS);
-  if (url_part)
-    set_string(url_part, module_object, "options");
+  uc = curl_url_get(url, CURLUPART_PORT, &url_parts_ptr->port, FLAGS);
+  if (!uc)
+    set_string(url_parts_ptr->port, module_object, "port");
 
-  curl_url_get(url, CURLUPART_HOST, &url_part, FLAGS);
-  if (url_part)
-    set_string(url_part, module_object, "host");
+  uc = curl_url_get(url, CURLUPART_PATH, &url_parts_ptr->path, FLAGS);
+  if (!uc)
+    set_string(url_parts_ptr->path, module_object, "path");
 
-  curl_url_get(url, CURLUPART_PORT, &url_part, FLAGS);
-  if (url_part)
-    set_string(url_part, module_object, "port");
+  uc = curl_url_get(url, CURLUPART_QUERY, &url_parts_ptr->query, FLAGS);
+  if (!uc)
+    set_string(url_parts_ptr->query, module_object, "query");
 
-  curl_url_get(url, CURLUPART_PATH, &url_part, FLAGS);
-  if (url_part)
-    set_string(url_part, module_object, "path");
+  uc = curl_url_get(url, CURLUPART_FRAGMENT, &url_parts_ptr->fragment, FLAGS);
+  if (!uc)
+    set_string(url_parts_ptr->fragment, module_object, "fragment");
 
-  curl_url_get(url, CURLUPART_QUERY, &url_part, FLAGS);
-  if (url_part)
-    set_string(url_part, module_object, "query");
+  uc = curl_url_get(url, CURLUPART_ZONEID, &url_parts_ptr->zoneid, FLAGS);
+  if (!uc)
+    set_string(url_parts_ptr->zoneid, module_object, "zoneid");
 
-  curl_url_get(url, CURLUPART_FRAGMENT, &url_part, FLAGS);
-  if (url_part)
-    set_string(url_part, module_object, "fragment");
-
-  curl_url_get(url, CURLUPART_ZONEID, &url_part, FLAGS);
-  if (url_part)
-    set_string(url_part, module_object, "zoneid");
-
-  curl_free(url_part);
-
-  module_object->data = url;
+  curl_url_cleanup(url);
+  module_object->data = url_parts_ptr;
 
   return ERROR_SUCCESS;
 }
 
-
 int module_unload(YR_OBJECT* module_object) {
-  curl_url_cleanup(module_object->data);
+  URLParts* url_parts_ptr = module_object->data;
+  curl_free(url_parts_ptr->scheme);
+  curl_free(url_parts_ptr->user);
+  curl_free(url_parts_ptr->password);
+  curl_free(url_parts_ptr->options);
+  curl_free(url_parts_ptr->host);
+  curl_free(url_parts_ptr->port);
+  curl_free(url_parts_ptr->path);
+  curl_free(url_parts_ptr->query);
+  curl_free(url_parts_ptr->fragment);
+  curl_free(url_parts_ptr->zoneid);
+  yr_free(url_parts_ptr);
   return ERROR_SUCCESS;
 }
 
