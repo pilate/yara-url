@@ -137,17 +137,20 @@ int module_load(YR_SCAN_CONTEXT *context, YR_OBJECT *module_object, void *module
   CURLUcode uc;
   CURLU *url;
   URLParts *url_parts_ptr = yr_malloc(sizeof(URLParts));
+  module_object->data = url_parts_ptr;
 
   url = curl_url();
   if (!url)
-    return -1;
+    return ERROR_INTERNAL_FATAL_ERROR;
 
   YR_MEMORY_BLOCK *block = first_memory_block(context);
   const char *block_data = (char *)block->fetch_data(block);
 
   uc = curl_url_set(url, CURLUPART_URL, block_data, 0);
-  if (uc)
-    return -1;
+  if (uc) {
+    curl_url_cleanup(url);
+    return ERROR_INVALID_MODULE_DATA;
+  }
 
   uc = curl_url_get(url, CURLUPART_SCHEME, &url_parts_ptr->scheme, FLAGS);
   if (!uc)
@@ -196,7 +199,6 @@ int module_load(YR_SCAN_CONTEXT *context, YR_OBJECT *module_object, void *module
     set_string(EMPTY_PTR, module_object, "zoneid");
 
   curl_url_cleanup(url);
-  module_object->data = url_parts_ptr;
 
   return ERROR_SUCCESS;
 }
