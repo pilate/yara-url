@@ -27,7 +27,7 @@ RUN cd yara-3.10.0 \
 
 RUN cd yara-3.10.0 \
 && ./bootstrap.sh \
-&& ./configure \
+&& ./configure --enable-url \
 && make \
 && make install \
 && cd ..
