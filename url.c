@@ -6,8 +6,9 @@
 
 
 unsigned int FLAGS = CURLU_URLDECODE | CURLU_DEFAULT_SCHEME | CURLU_DEFAULT_PORT;
-char EMPTY[1] = "\x00";
-char *EMPTY_PTR = EMPTY;
+
+char EMPTY_STR[1] = "\x00";
+char *EMPTY_STR_PTR = EMPTY_STR;
 
 typedef struct {
   char *scheme;
@@ -133,6 +134,14 @@ int module_finalize(YR_MODULE* module) {
   return ERROR_SUCCESS;
 }
 
+void curl_get_yara_set_string(CURLU *url, CURLUPart what, char **out, YR_OBJECT *module_object, char *name) {
+  CURLUcode uc = curl_url_get(url, what, out, FLAGS);
+  if (!uc)
+    set_string(*out, module_object, name, "");
+  else
+    set_string(EMPTY_STR_PTR, module_object, name, "");
+}
+
 int module_load(YR_SCAN_CONTEXT *context, YR_OBJECT *module_object, void *module_data, size_t module_data_size) {
   CURLUcode uc;
   CURLU *url;
@@ -152,51 +161,19 @@ int module_load(YR_SCAN_CONTEXT *context, YR_OBJECT *module_object, void *module
     return ERROR_INVALID_MODULE_DATA;
   }
 
-  uc = curl_url_get(url, CURLUPART_SCHEME, &url_parts_ptr->scheme, FLAGS);
-  if (!uc)
-    set_string(url_parts_ptr->scheme, module_object, "scheme");
-
-  uc = curl_url_get(url, CURLUPART_USER, &url_parts_ptr->user, FLAGS);
-  if (!uc)
-    set_string(url_parts_ptr->user, module_object, "user");
-  else
-    set_string(EMPTY_PTR, module_object, "user");
-
-  uc = curl_url_get(url, CURLUPART_PASSWORD, &url_parts_ptr->password, FLAGS);
-  if (!uc)
-    set_string(url_parts_ptr->password, module_object, "password");
-  else
-    set_string(EMPTY_PTR, module_object, "password");
-
-  uc = curl_url_get(url, CURLUPART_HOST, &url_parts_ptr->host, FLAGS);
-  if (!uc)
-    set_string(url_parts_ptr->host, module_object, "host");
+  curl_get_yara_set_string(url, CURLUPART_SCHEME, &url_parts_ptr->scheme, module_object, "scheme");
+  curl_get_yara_set_string(url, CURLUPART_USER, &url_parts_ptr->user, module_object, "user");
+  curl_get_yara_set_string(url, CURLUPART_PASSWORD, &url_parts_ptr->password, module_object, "password");
+  curl_get_yara_set_string(url, CURLUPART_HOST, &url_parts_ptr->host, module_object, "host");
 
   uc = curl_url_get(url, CURLUPART_PORT, &url_parts_ptr->port, FLAGS);
   if (!uc)
     set_integer(atoi(url_parts_ptr->port), module_object, "port");
 
-  uc = curl_url_get(url, CURLUPART_PATH, &url_parts_ptr->path, FLAGS);
-  if (!uc)
-    set_string(url_parts_ptr->path, module_object, "path");
-
-  uc = curl_url_get(url, CURLUPART_QUERY, &url_parts_ptr->query, FLAGS);
-  if (!uc)
-    set_string(url_parts_ptr->query, module_object, "query");
-  else
-    set_string(EMPTY_PTR, module_object, "query");
-
-  uc = curl_url_get(url, CURLUPART_FRAGMENT, &url_parts_ptr->fragment, FLAGS);
-  if (!uc)
-    set_string(url_parts_ptr->fragment, module_object, "fragment");
-  else
-    set_string(EMPTY_PTR, module_object, "fragment");
-
-  uc = curl_url_get(url, CURLUPART_ZONEID, &url_parts_ptr->zoneid, FLAGS);
-  if (!uc)
-    set_string(url_parts_ptr->zoneid, module_object, "zoneid");
-  else
-    set_string(EMPTY_PTR, module_object, "zoneid");
+  curl_get_yara_set_string(url, CURLUPART_PATH, &url_parts_ptr->path, module_object, "path");
+  curl_get_yara_set_string(url, CURLUPART_QUERY, &url_parts_ptr->query, module_object, "query");
+  curl_get_yara_set_string(url, CURLUPART_FRAGMENT, &url_parts_ptr->fragment, module_object, "fragment");
+  curl_get_yara_set_string(url, CURLUPART_ZONEID, &url_parts_ptr->zoneid, module_object, "zoneid");
 
   curl_url_cleanup(url);
 
