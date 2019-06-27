@@ -164,6 +164,7 @@ int module_load(YR_SCAN_CONTEXT *context, YR_OBJECT *module_object, void *module
   curl_get_yara_set_string(url, CURLUPART_SCHEME, &url_parts_ptr->scheme, module_object, "scheme");
   curl_get_yara_set_string(url, CURLUPART_USER, &url_parts_ptr->user, module_object, "user");
   curl_get_yara_set_string(url, CURLUPART_PASSWORD, &url_parts_ptr->password, module_object, "password");
+  curl_get_yara_set_string(url, CURLUPART_OPTIONS, &url_parts_ptr->options, module_object, "options");
   curl_get_yara_set_string(url, CURLUPART_HOST, &url_parts_ptr->host, module_object, "host");
 
   uc = curl_url_get(url, CURLUPART_PORT, &url_parts_ptr->port, FLAGS);
