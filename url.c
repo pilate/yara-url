@@ -5,12 +5,14 @@
 #define MODULE_NAME url
 
 
-unsigned int FLAGS = CURLU_URLDECODE | CURLU_DEFAULT_SCHEME | CURLU_DEFAULT_PORT;
+unsigned int SET_FLAGS = CURLU_NON_SUPPORT_SCHEME | CURLU_URLENCODE | CURLU_DEFAULT_SCHEME;
+unsigned int GET_FLAGS = CURLU_DEFAULT_PORT | CURLU_DEFAULT_SCHEME | CURLU_URLDECODE;
 
 char EMPTY_STR[1] = "\x00";
 char *EMPTY_STR_PTR = EMPTY_STR;
 
-typedef struct {
+typedef struct
+{
   char *scheme;
   char *user;
   char *password;
@@ -23,7 +25,8 @@ typedef struct {
   char *zoneid;
 } URLParts;
 
-int yr_re_match_curlupart(char *url_part, YR_SCAN_CONTEXT *context, RE *regexp) {
+int yr_re_match_curlupart(char *url_part, YR_SCAN_CONTEXT *context, RE *regexp)
+{
   int result = 0;
 
   if (yr_re_match(context, regexp, url_part) > 0)
@@ -126,26 +129,31 @@ begin_declarations;
 end_declarations;
 
 
-int module_initialize(YR_MODULE* module) {
+int module_initialize(YR_MODULE* module)
+{
   return ERROR_SUCCESS;
 }
 
-int module_finalize(YR_MODULE* module) {
+int module_finalize(YR_MODULE* module)
+{
   return ERROR_SUCCESS;
 }
 
-void curl_get_yara_set_string(CURLU *url, CURLUPart what, char **out, YR_OBJECT *module_object, char *name) {
-  CURLUcode uc = curl_url_get(url, what, out, FLAGS);
+void curl_get_yara_set_string(CURLU *url, CURLUPart what, char **out, YR_OBJECT *module_object, char *name)
+{
+  CURLUcode uc = curl_url_get(url, what, out, GET_FLAGS);
   if (!uc)
     set_string(*out, module_object, name, "");
   else
     set_string(EMPTY_STR_PTR, module_object, name, "");
 }
 
-int module_load(YR_SCAN_CONTEXT *context, YR_OBJECT *module_object, void *module_data, size_t module_data_size) {
+int module_load(YR_SCAN_CONTEXT *context, YR_OBJECT *module_object, void *module_data, size_t module_data_size)
+{
   CURLUcode uc;
   CURLU *url;
   URLParts *url_parts_ptr = yr_malloc(sizeof(URLParts));
+  memset(url_parts_ptr, 0, sizeof(URLParts));
   module_object->data = url_parts_ptr;
 
   url = curl_url();
@@ -155,7 +163,7 @@ int module_load(YR_SCAN_CONTEXT *context, YR_OBJECT *module_object, void *module
   YR_MEMORY_BLOCK *block = first_memory_block(context);
   const char *block_data = (char *)block->fetch_data(block);
 
-  uc = curl_url_set(url, CURLUPART_URL, block_data, 0);
+  uc = curl_url_set(url, CURLUPART_URL, block_data, SET_FLAGS);
   if (uc) {
     curl_url_cleanup(url);
     return ERROR_INVALID_MODULE_DATA;
@@ -167,7 +175,7 @@ int module_load(YR_SCAN_CONTEXT *context, YR_OBJECT *module_object, void *module
   curl_get_yara_set_string(url, CURLUPART_OPTIONS, &url_parts_ptr->options, module_object, "options");
   curl_get_yara_set_string(url, CURLUPART_HOST, &url_parts_ptr->host, module_object, "host");
 
-  uc = curl_url_get(url, CURLUPART_PORT, &url_parts_ptr->port, FLAGS);
+  uc = curl_url_get(url, CURLUPART_PORT, &url_parts_ptr->port, GET_FLAGS);
   if (!uc)
     set_integer(atoi(url_parts_ptr->port), module_object, "port");
 
@@ -181,7 +189,8 @@ int module_load(YR_SCAN_CONTEXT *context, YR_OBJECT *module_object, void *module
   return ERROR_SUCCESS;
 }
 
-int module_unload(YR_OBJECT *module_object) {
+int module_unload(YR_OBJECT *module_object)
+{
   URLParts *url_parts_ptr = module_object->data;
   curl_free(url_parts_ptr->scheme);
   curl_free(url_parts_ptr->user);
